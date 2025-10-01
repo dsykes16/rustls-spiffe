@@ -7,18 +7,20 @@ use std::{
 };
 
 use rustls::{
-    RootCertStore, ServerConfig,
+    ServerConfig,
     pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer},
     server::WebPkiClientVerifier,
 };
 use rustls_config_stream::{ServerConfigStreamBuilder, ServerConfigStreamError};
-use spiffe::{TrustDomain, WorkloadApiClient, X509BundleSet, X509Context, error::GrpcClientError};
+use spiffe::{TrustDomain, WorkloadApiClient, X509Context, error::GrpcClientError};
 use tokio_stream::Stream;
 
 pub use rustls_config_stream::ServerConfigProvider;
 
 #[cfg(feature = "tracing")]
 use tracing::debug;
+
+use crate::TrustDomainStore;
 
 /// Builder for a [`SpiffeServerConfigStream`] that provides [`rustls::ServerConfig`]
 /// objects built w/ trust bundles and workload X509-SVID from SPIFFE.
@@ -33,7 +35,7 @@ pub struct SpiffeServerConfigStreamBuilder {
 impl SpiffeServerConfigStreamBuilder {
     /// Create a builder that can create [`SpiffeServerConfigStream`] objects
     /// with the provided SPIFFE trust domains.
-    fn new(trust_domains: Vec<TrustDomain>) -> Self {
+    const fn new(trust_domains: Vec<TrustDomain>) -> Self {
         Self {
             trust_domains,
             client: None,
@@ -52,7 +54,7 @@ impl ServerConfigStreamBuilder for SpiffeServerConfigStreamBuilder {
                 .map_err(|e| ServerConfigStreamError::StreamBuilderError(e.into()))?
         };
         Ok(SpiffeServerConfigStream {
-            trust_domains: self.trust_domains.to_owned(),
+            trust_domains: self.trust_domains.clone(),
             inner: Pin::from(Box::from(
                 client
                     .stream_x509_contexts()
@@ -63,7 +65,7 @@ impl ServerConfigStreamBuilder for SpiffeServerConfigStreamBuilder {
     }
 }
 
-/// A stream that yields updated `rustls::ServerConfig` values derived from the
+/// A stream that yields updated [`rustls::ServerConfig`] values derived from the
 /// SPIFFE Workload API X509-SVID and Trust Bundles.
 ///
 /// Each yielded config:
@@ -131,40 +133,29 @@ impl ServerConfigStreamBuilder for SpiffeServerConfigStreamBuilder {
 ///     }
 /// }
 /// ```
-
 pub struct SpiffeServerConfigStream {
     inner:
         Pin<Box<dyn Stream<Item = Result<X509Context, GrpcClientError>> + Send + Sync + 'static>>,
     trust_domains: Vec<TrustDomain>,
 }
 
+impl TrustDomainStore for SpiffeServerConfigStream {
+    fn get_trust_domains(&self) -> &Vec<TrustDomain> {
+        &self.trust_domains
+    }
+}
+
 impl SpiffeServerConfigStream {
     /// Create a builder that can create [`SpiffeServerConfigStream`] objects
     /// with the provided SPIFFE trust domains.
-    pub fn builder(trust_domains: Vec<TrustDomain>) -> SpiffeServerConfigStreamBuilder {
+    #[must_use]
+    pub const fn builder(trust_domains: Vec<TrustDomain>) -> SpiffeServerConfigStreamBuilder {
         SpiffeServerConfigStreamBuilder::new(trust_domains)
-    }
-
-    fn build_root_store(&self, bundles: &X509BundleSet) -> Arc<RootCertStore> {
-        let mut root_store = RootCertStore::empty();
-        let root_certs = self
-            .trust_domains
-            .iter()
-            .filter_map(|domain| bundles.get_bundle(domain))
-            .flat_map(|bundle| bundle.authorities())
-            .map(|authority| CertificateDer::from_slice(authority.content()));
-
-        let (added, ignored) = root_store.add_parsable_certificates(root_certs);
-
-        #[cfg(feature = "tracing")]
-        debug!(added, ignored);
-
-        Arc::new(root_store)
     }
 
     fn build_server_config(
         &self,
-        x509_context: X509Context,
+        x509_context: &X509Context,
     ) -> Result<Arc<ServerConfig>, ServerConfigStreamError> {
         let roots = self.build_root_store(x509_context.bundle_set());
         if roots.is_empty() {
@@ -172,7 +163,7 @@ impl SpiffeServerConfigStream {
         }
         let verifier = WebPkiClientVerifier::builder(roots)
             .build()
-            .map_err(|e| ServerConfigStreamError::VerifierBuilderError(e))?;
+            .map_err(ServerConfigStreamError::VerifierBuilderError)?;
         let svid = x509_context
             .default_svid()
             .ok_or(ServerConfigStreamError::MissingCertifiedKey)?;
@@ -191,7 +182,7 @@ impl SpiffeServerConfigStream {
                     svid.private_key().content().to_owned(),
                 )),
             )
-            .map_err(|e| ServerConfigStreamError::RustlsError(e))?;
+            .map_err(ServerConfigStreamError::RustlsError)?;
         Ok(Arc::from(config))
     }
 }
@@ -206,7 +197,7 @@ impl Stream for SpiffeServerConfigStream {
             Poll::Ready(Some(Err(err))) => {
                 Poll::Ready(Some(Err(ServerConfigStreamError::StreamError(err.into()))))
             }
-            Poll::Ready(Some(Ok(x509_context))) => match self.build_server_config(x509_context) {
+            Poll::Ready(Some(Ok(x509_context))) => match self.build_server_config(&x509_context) {
                 Ok(config) => Poll::Ready(Some(Ok(config))),
                 Err(err) => Poll::Ready(Some(Err(err))),
             },
