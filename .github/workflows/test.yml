@@ -29,7 +29,11 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: spire/build
-          key: ${{ runner.os }}-spire
+          key: ${{ runner.os }}-spire-build
+      - uses: actions/cache@v4
+        with:
+          path: spire/bin
+          key: ${{ runner.os }}-spire-bin
       - uses: taiki-e/install-action@cargo-nextest
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: format
