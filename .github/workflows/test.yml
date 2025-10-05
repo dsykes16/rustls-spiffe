@@ -42,7 +42,7 @@ jobs:
         run: make up SHELL=/bin/bash
       - name: test
         run:
-          SPIFFE_ENDPOINT_SOCKET=unix:///tmp/spire-agent/public/api.sock \
+          SPIFFE_ENDPOINT_SOCKET=unix:///tmp/spire-agent/public/api.sock
           cargo llvm-cov nextest --profile ci
       - name: generate coverage report
         run: cargo llvm-cov report --codecov --output-path coverage.json

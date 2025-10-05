@@ -12,16 +12,17 @@ use tokio_rustls::server::TlsStream;
 use x509_parser::prelude::GeneralName;
 
 #[inline(always)]
-pub(crate) fn extract_leaf_cert(stream: &TlsStream<TcpStream>) -> Option<&CertificateDer> {
+pub(crate) fn extract_leaf_cert<'a>(
+    stream: &'a TlsStream<TcpStream>,
+) -> Option<&'a CertificateDer<'a>> {
     let (_, state) = stream.get_ref();
-    let peer_certificates = state.peer_certificates();
-    let chain = peer_certificates?;
-    let leaf = chain.first()?;
+    let peer_certificates = state.peer_certificates()?;
+    let leaf = peer_certificates.first()?;
     Some(leaf)
 }
 
 #[inline(always)]
-pub(crate) fn extract_spiffe_id(leaf: Option<&CertificateDer>) -> Option<SpiffeId> {
+pub(crate) fn extract_spiffe_id<'a>(leaf: Option<&'a CertificateDer>) -> Option<SpiffeId> {
     let leaf = leaf?;
     let (_, cert) = x509_parser::parse_x509_certificate(leaf).ok()?;
     let san = cert.subject_alternative_name().ok()??;
