@@ -1,6 +1,6 @@
 [package]
 name = "rustls-spiffe"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "SPIFFE Integration with Rustls to provide Server and Client certs/keys and CA bundle"
 license = "Apache-2.0 WITH LLVM-exception"

@@ -4,6 +4,9 @@
 #   make clean
 #   make distclean
 
+SHELL := bash
+.SHELLFLAGS := -eu -o pipefail -c
+
 # ==== Configuration ====
 SPIRE_VERSION ?= 1.13.1
 TARBALL_URL   := https://github.com/spiffe/spire/archive/refs/tags/v$(SPIRE_VERSION).tar.gz
@@ -35,7 +38,6 @@ else
 endif
 
 # Make setup
-.SHELLFLAGS := -eu -o pipefail -c
 .ONESHELL:
 .DELETE_ON_ERROR:
 MAKEFLAGS += --no-builtin-rules

@@ -1,19 +1,28 @@
+SHELL := bash
+.SHELLFLAGS := -eu -o pipefail -c
+MAKEFLAGS += --no-builtin-rules
+
 SPIRE_VERSION ?= 1.13.1
 SPIRE_DIR     ?= ./spire
-SERVER_BIN    ?= $(SPIRE_DIR)/bin/spire-server
-AGENT_BIN     ?= $(SPIRE_DIR)/bin/spire-agent
-CONFIG_DIR    ?= $(SPIRE_DIR)/conf
-AGENT_CONFIG  ?= $(CONFIG_DIR)/agent.conf
-SERVER_CONFIG ?= $(CONFIG_DIR)/server.conf
-LOG_DIR       ?= $(SPIRE_DIR)/log
+TMPDIR        ?= /tmp
 WORKLOAD_API  ?= $(TMPDIR)/spire-agent/public/api.sock
+TIMEOUT       ?= 30
+
+SERVER_BIN    := $(SPIRE_DIR)/bin/spire-server
+AGENT_BIN     := $(SPIRE_DIR)/bin/spire-agent
+CONFIG_DIR    := $(SPIRE_DIR)/conf
+AGENT_CONFIG  := $(CONFIG_DIR)/agent.conf
+SERVER_CONFIG := $(CONFIG_DIR)/server.conf
+LOG_DIR       := $(SPIRE_DIR)/log
 SERVER_PID    := $(SPIRE_DIR)/server.pid
 AGENT_PID     := $(SPIRE_DIR)/agent.pid
+JOIN_TOKEN    := $(SPIRE_DIR)/join.token
+
+export TMPDIR := $(TMPDIR)
 
 .PHONY: all deps clean up down test spire
 
 all: test
-
 deps: spire
 
 spire:
@@ -25,21 +34,28 @@ clean: down
 
 
 test: up
-	@export SPIFFE_ENDPOINT_SOCKET=unix://$(WORKLOAD_API) && \
+	@SPIFFE_ENDPOINT_SOCKET=unix://$(WORKLOAD_API) \
 		cargo llvm-cov nextest --no-fail-fast || true
-	#$(MAKE) down
+	$(MAKE) down
 
 up: $(AGENT_PID)
 
-$(SERVER_PID): spire
-	@[ -d $(LOG_DIR) ] || mkdir $(LOG_DIR)
+$(SERVER_PID): | spire
+	@install -d $(LOG_DIR)
 	@$(SERVER_BIN) run -expandEnv -config $(SERVER_CONFIG) > $(LOG_DIR)/server.log 2>&1 & \
 		echo $$! > $(SERVER_PID)
-	@# wait for server ready
-	@until curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ready | grep -q 200; do \
-		echo "waiting for server..."; \
-		sleep 1; \
-	done
+	@{ \
+		s=1; \
+		until curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ready | grep -q 200; do \
+			if [ $$s -gt $(TIMEOUT) ]; then \
+				echo "timed out waiting for spire server"; \
+				break; \
+			fi; \
+			echo "waiting for spire server..."; \
+			((s++)); \
+			sleep 1; \
+		done; \
+	}
 	@$(SERVER_BIN) token generate \
 		-socketPath $(TMPDIR)/spire-server/private/api.sock \
 		-spiffeID spiffe://example.org/testagent \
@@ -53,7 +69,7 @@ $(SERVER_PID): spire
 		-dns 127.0.0.1
 	@echo "SPIRE server started."
 
-$(AGENT_PID): $(SERVER_PID)
+$(AGENT_PID): | $(SERVER_PID)
 	@$(AGENT_BIN) run \
 		-insecureBootstrap \
 		-expandEnv \
@@ -61,16 +77,30 @@ $(AGENT_PID): $(SERVER_PID)
 		-joinToken $$(awk '{print $$2}' $(SPIRE_DIR)/join.token) \
 		> $(LOG_DIR)/agent.log 2>&1 & \
 		echo $$! > $(AGENT_PID)
-	@# wait for agent ready
-	@until curl -s -o /dev/null -w "%{http_code}" http://localhost:8082/ready | grep -q 200; do \
-		echo "waiting for server..."; \
-		sleep 1; \
-	done
-	@# wait for workload entry
-	@until $(AGENT_BIN) api fetch -socketPath $(WORKLOAD_API) | grep -q testservice; do \
-		echo "waiting for workload entry..."; \
-		sleep 1; \
-	done
+	@{ \
+		s=1; \
+		until curl -s -o /dev/null -w "%{http_code}" http://localhost:8082/ready | grep -q 200; do \
+			if [ $$s -gt $(TIMEOUT) ]; then \
+				echo "timed out waiting for spire agent"; \
+				break; \
+			fi; \
+			echo "waiting for spire agent..."; \
+			((s++)); \
+			sleep 1; \
+		done; \
+	}
+	@{ \
+		s=1; \
+		until $(AGENT_BIN) api fetch -socketPath $(WORKLOAD_API) | grep -q testservice; do \
+			if [ $$s -gt $(TIMEOUT) ]; then \
+				echo "timed out waiting for spire agent"; \
+				break; \
+			fi; \
+			echo "waiting for spire agent..."; \
+			((s++)); \
+			sleep 1; \
+		done; \
+	}
 	@echo "SPIRE agent started."
 
 
