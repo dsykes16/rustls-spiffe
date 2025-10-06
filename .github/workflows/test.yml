@@ -1,0 +1,61 @@
+name: Tests
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  sonarqube:
+    name: SonarQube
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  test:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: spire/build
+          key: ${{ runner.os }}-spire-build
+      - uses: actions/cache@v4
+        with:
+          path: spire/bin
+          key: ${{ runner.os }}-spire-bin
+      - uses: taiki-e/install-action@cargo-nextest
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: format
+        run: cargo fmt --check
+      - name: lint
+        run: cargo clippy -- -D warnings
+      - name: build spire
+        run: make -C spire SHELL=/bin/bash
+      - name: start spire
+        run: make up SHELL=/bin/bash
+      - name: test
+        run:
+          SPIFFE_ENDPOINT_SOCKET=unix:///tmp/spire-agent/public/api.sock
+          cargo llvm-cov nextest --profile ci
+      - name: generate coverage report
+        run: cargo llvm-cov report --codecov --output-path coverage.json
+      - name: upload codecov test report
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: upload codecov coverage report
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

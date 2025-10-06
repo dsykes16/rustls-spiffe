@@ -1,8 +1,32 @@
 [package]
 name = "rustls-spiffe"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "SPIFFE Integration with Rustls to provide Server and Client certs/keys and CA bundle"
-license = "MIT or Apache-2.0"
+license = "Apache-2.0 WITH LLVM-exception"
 
 [dependencies]
+rustls = { version = "0.23.31", default-features = false, features = [
+	"std",
+	"aws-lc-rs",
+] }
+rustls-config-stream = { version = "0.2.0", default-features = false, optional = true }
+spiffe = "0.6.7"
+tokio-stream = { version = "0.1.17", default-features = false, optional = true }
+tracing = { version = "0.1.41", default-features = false, optional = true }
+x509-parser = { version = "0.18.0", optional = true }
+
+[features]
+default = ["full"]
+full = ["config-stream", "svid-extractor", "tracing"]
+tracing = ["dep:tracing", "rustls-config-stream?/tracing"]
+config-stream = ["dep:rustls-config-stream", "dep:tokio-stream"]
+svid-extractor = ["dep:x509-parser"]
+
+[dev-dependencies]
+axum = "0.8.4"
+hyper = "1.7.0"
+hyper-util = "0.1.17"
+tokio = { version = "1.47.1", features = ["rt-multi-thread"] }
+tokio-rustls = "0.26.3"
+tower-service = "0.3.3"

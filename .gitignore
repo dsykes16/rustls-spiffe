@@ -1,1 +1,6 @@
 /target
+Cargo.lock
+/spire/**
+!/spire/Makefile
+!/spire/conf
+!/spire/conf/*.conf
