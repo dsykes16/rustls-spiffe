@@ -12,21 +12,22 @@ rustls = { version = "0.23.31", default-features = false, features = [
 ] }
 rustls-config-stream = { version = "0.2.0", default-features = false, optional = true }
 spiffe = "0.6.7"
+tokio = { version = "1.47.1", default-features = false, optional = true }
 tokio-stream = { version = "0.1.17", default-features = false, optional = true }
 tracing = { version = "0.1.41", default-features = false, optional = true }
 x509-parser = { version = "0.18.0", optional = true }
+tokio-rustls = { version = "0.26.3", optional = true }
 
 [features]
 default = ["full"]
 full = ["config-stream", "svid-extractor", "tracing"]
 tracing = ["dep:tracing", "rustls-config-stream?/tracing"]
 config-stream = ["dep:rustls-config-stream", "dep:tokio-stream"]
-svid-extractor = ["dep:x509-parser"]
+svid-extractor = ["dep:x509-parser", "dep:tokio", "dep:tokio-rustls"]
 
 [dev-dependencies]
 axum = "0.8.4"
 hyper = "1.7.0"
 hyper-util = "0.1.17"
 tokio = { version = "1.47.1", features = ["rt-multi-thread"] }
-tokio-rustls = "0.26.3"
 tower-service = "0.3.3"

@@ -22,11 +22,19 @@
 mod client_stream;
 #[cfg(feature = "config-stream")]
 mod server_stream;
+#[cfg(feature = "svid-extractor")]
+mod svid_extractor;
 
 #[cfg(feature = "config-stream")]
+#[cfg_attr(docsrs, doc(cfg(feature = "config-stream")))]
 pub use client_stream::{ClientConfigProvider, SpiffeClientConfigStream};
 #[cfg(feature = "config-stream")]
+#[cfg_attr(docsrs, doc(cfg(feature = "config-stream")))]
 pub use server_stream::{ServerConfigProvider, SpiffeServerConfigStream};
 
 mod trust_domain_store;
 pub(crate) use trust_domain_store::TrustDomainStore;
+
+#[cfg(feature = "svid-extractor")]
+#[cfg_attr(docsrs, doc(cfg(feature = "svid-extractor")))]
+pub use svid_extractor::{extract_leaf_cert, extract_spiffe_id};

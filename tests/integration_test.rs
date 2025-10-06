@@ -1,37 +1,9 @@
 use rustls_spiffe::{
     ClientConfigProvider, ServerConfigProvider, SpiffeClientConfigStream, SpiffeServerConfigStream,
+    extract_leaf_cert, extract_spiffe_id,
 };
-
-use rustls::pki_types::CertificateDer;
 use spiffe::SpiffeId;
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpStream,
-};
-use tokio_rustls::server::TlsStream;
-use x509_parser::prelude::GeneralName;
-
-#[inline(always)]
-pub(crate) fn extract_leaf_cert<'a>(
-    stream: &'a TlsStream<TcpStream>,
-) -> Option<&'a CertificateDer<'a>> {
-    let (_, state) = stream.get_ref();
-    let peer_certificates = state.peer_certificates()?;
-    let leaf = peer_certificates.first()?;
-    Some(leaf)
-}
-
-#[inline(always)]
-pub(crate) fn extract_spiffe_id<'a>(leaf: Option<&'a CertificateDer>) -> Option<SpiffeId> {
-    let leaf = leaf?;
-    let (_, cert) = x509_parser::parse_x509_certificate(leaf).ok()?;
-    let san = cert.subject_alternative_name().ok()??;
-    let uri = san.value.general_names.iter().find_map(|gn| match gn {
-        GeneralName::URI(uri) => Some(*uri),
-        _ => None,
-    })?;
-    SpiffeId::try_from(uri).ok()
-}
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 #[tokio::test(flavor = "multi_thread")]
 async fn successful_handshake() {
