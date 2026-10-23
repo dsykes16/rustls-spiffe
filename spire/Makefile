@@ -8,7 +8,7 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 
 # ==== Configuration ====
-SPIRE_VERSION ?= 1.13.1
+SPIRE_VERSION ?= 1.15.5
 TARBALL_URL   := https://github.com/spiffe/spire/archive/refs/tags/v$(SPIRE_VERSION).tar.gz
 
 # Directories
