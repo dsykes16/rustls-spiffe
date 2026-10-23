@@ -11,7 +11,7 @@ rustls = { version = "0.23.31", default-features = false, features = [
 	"aws-lc-rs",
 ] }
 rustls-config-stream = { version = "0.2.0", default-features = false, optional = true }
-spiffe = "0.6.7"
+spiffe = { version = "0.18.0", features = ["workload-api-x509"] }
 tokio = { version = "1.47.1", default-features = false, optional = true }
 tokio-stream = { version = "0.1.17", default-features = false, optional = true }
 tracing = { version = "0.1.41", default-features = false, optional = true }

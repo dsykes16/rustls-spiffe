@@ -12,7 +12,7 @@ use rustls::{
     server::WebPkiClientVerifier,
 };
 use rustls_config_stream::{ServerConfigStreamBuilder, ServerConfigStreamError};
-use spiffe::{TrustDomain, WorkloadApiClient, X509Context, error::GrpcClientError};
+use spiffe::{TrustDomain, WorkloadApiClient, WorkloadApiError, X509Context};
 use tokio_stream::Stream;
 
 pub use rustls_config_stream::ServerConfigProvider;
@@ -49,7 +49,7 @@ impl ServerConfigStreamBuilder for SpiffeServerConfigStreamBuilder {
         let client = if let Some(client) = &mut self.client {
             client
         } else {
-            &mut WorkloadApiClient::default()
+            &mut WorkloadApiClient::connect_env()
                 .await
                 .map_err(|e| ServerConfigStreamError::StreamBuilderError(e.into()))?
         };
@@ -77,7 +77,7 @@ impl ServerConfigStreamBuilder for SpiffeServerConfigStreamBuilder {
 ///
 /// * If the Workload API stream returns an error, this stream yields
 ///   a [`ServerConfigStreamError::StreamError`] wrapping the original
-///   [`GrpcClientError`].
+///   [`WorkloadApiError`].
 /// * If an update lacks roots/SVID or the verifier cannot be built, the error
 ///   is returned on the stream as a [`ServerConfigStreamError`]
 ///
@@ -135,7 +135,7 @@ impl ServerConfigStreamBuilder for SpiffeServerConfigStreamBuilder {
 /// ```
 pub struct SpiffeServerConfigStream {
     inner:
-        Pin<Box<dyn Stream<Item = Result<X509Context, GrpcClientError>> + Send + Sync + 'static>>,
+        Pin<Box<dyn Stream<Item = Result<X509Context, WorkloadApiError>> + Send + Sync + 'static>>,
     trust_domains: Vec<TrustDomain>,
 }
 
@@ -176,10 +176,10 @@ impl SpiffeServerConfigStream {
             .with_single_cert(
                 svid.cert_chain()
                     .iter()
-                    .map(|c| CertificateDer::from(c.content().to_owned()))
+                    .map(|c| CertificateDer::from(c.as_bytes().to_owned()))
                     .collect(),
                 PrivateKeyDer::from(PrivatePkcs8KeyDer::from(
-                    svid.private_key().content().to_owned(),
+                    svid.private_key().as_bytes().to_owned(),
                 )),
             )
             .map_err(ServerConfigStreamError::RustlsError)?;
