@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 use rustls::{RootCertStore, pki_types::CertificateDer};
-use spiffe::{TrustDomain, X509Bundle, X509BundleSet};
+use spiffe::{TrustDomain, X509BundleSet};
 use std::sync::Arc;
 #[cfg(feature = "tracing")]
 use tracing::debug;
@@ -13,9 +13,9 @@ pub trait TrustDomainStore {
         let root_certs = self
             .get_trust_domains()
             .iter()
-            .filter_map(|domain| bundles.get_bundle(domain))
-            .flat_map(X509Bundle::authorities)
-            .map(|authority| CertificateDer::from_slice(authority.content()));
+            .filter_map(|domain| bundles.get_ref(domain))
+            .flat_map(|bundle| bundle.authorities())
+            .map(|authority| CertificateDer::from_slice(authority.as_bytes()));
 
         let (added, ignored) = root_store.add_parsable_certificates(root_certs);
 
