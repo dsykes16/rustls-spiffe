@@ -7,7 +7,23 @@
   ],
   "enabledManagers": [
     "cargo",
-    "github-actions"
+    "github-actions",
+    "custom.regex"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "SPIRE release built from source for integration tests",
+      "managerFilePatterns": [
+        "spire/Makefile"
+      ],
+      "matchStrings": [
+        "SPIRE_VERSION\\s*\\?=\\s*(?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "spiffe/spire",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.+)$"
+    }
   ],
   "lockFileMaintenance": {
     "enabled": true
