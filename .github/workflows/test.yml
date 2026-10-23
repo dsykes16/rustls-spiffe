@@ -48,6 +48,10 @@ jobs:
         run:
           SPIFFE_ENDPOINT_SOCKET=unix:///tmp/spire-agent/public/api.sock
           cargo llvm-cov nextest --profile ci
+      - name: doc test
+        run:
+          SPIFFE_ENDPOINT_SOCKET=unix:///tmp/spire-agent/public/api.sock
+          cargo test --doc
       - name: generate coverage report
         run: cargo llvm-cov report --codecov --output-path coverage.json
       - name: upload codecov test report

@@ -36,6 +36,8 @@ clean: down
 test: up
 	@SPIFFE_ENDPOINT_SOCKET=unix://$(WORKLOAD_API) \
 		cargo llvm-cov nextest --no-fail-fast || true
+	@SPIFFE_ENDPOINT_SOCKET=unix://$(WORKLOAD_API) \
+		cargo test --doc || true
 	$(MAKE) down
 
 up: $(AGENT_PID)
