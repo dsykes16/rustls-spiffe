@@ -34,8 +34,8 @@ jobs:
         with:
           path: spire/bin
           key: ${{ runner.os }}-spire-bin-${{ hashFiles('spire/Makefile') }}
-      - uses: taiki-e/install-action@a79b10393ebff625d820b524ff726bbcc77ac20b # cargo-nextest
-      - uses: taiki-e/install-action@94a99045a72830168b8eae8bf767ba08abeca856 # cargo-llvm-cov
+      - uses: taiki-e/install-action@31bc3c614629c629e983adbbe0ac85c251535667 # cargo-nextest
+      - uses: taiki-e/install-action@c3076e6fa5aeb9a93daf1bd8eff73345250a8a9c # cargo-llvm-cov
       - name: format
         run: cargo fmt --check
       - name: lint
@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: taiki-e/install-action@7ff3827688bd742ffc0b597ab1bf503967134e46 # cargo-deny
+      - uses: taiki-e/install-action@63300d694c674b6bd0e1ca77d202a2bc41c4b623 # cargo-deny
       - name: check advisories, licenses, bans, and sources
         run: cargo deny check
   semver:
@@ -80,6 +80,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: taiki-e/install-action@b0a10c0811388ca59f0b3a271a33942b64b510d0 # cargo-semver-checks
+      - uses: taiki-e/install-action@429b20729bdd7afd12430e0b9f79c502a3530259 # cargo-semver-checks
       - name: check semver against latest crates.io release
         run: cargo semver-checks
