@@ -1,0 +1,30 @@
+# cargo-deny configuration: https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+all-features = true
+
+[advisories]
+# Vulnerable, unmaintained, and unsound crates are errors by default. Add a
+# RUSTSEC ID here (with a reason) only if an advisory doesn't apply to us.
+ignore = []
+
+[licenses]
+# Permissive licenses compatible with distributing this crate under
+# Apache-2.0 WITH LLVM-exception.
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-3-Clause",
+    "ISC",
+    "MIT",
+    "Unicode-3.0",
+]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
