@@ -48,6 +48,10 @@ jobs:
         run:
           SPIFFE_ENDPOINT_SOCKET=unix:///tmp/spire-agent/public/api.sock
           cargo llvm-cov nextest --profile ci
+      - name: doc test
+        run:
+          SPIFFE_ENDPOINT_SOCKET=unix:///tmp/spire-agent/public/api.sock
+          cargo test --doc
       - name: generate coverage report
         run: cargo llvm-cov report --codecov --output-path coverage.json
       - name: upload codecov test report
@@ -59,3 +63,23 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+  deny:
+    name: cargo-deny
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: taiki-e/install-action@7ff3827688bd742ffc0b597ab1bf503967134e46 # cargo-deny
+      - name: check advisories, licenses, bans, and sources
+        run: cargo deny check
+  semver:
+    name: cargo-semver-checks
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: taiki-e/install-action@b0a10c0811388ca59f0b3a271a33942b64b510d0 # cargo-semver-checks
+      - name: check semver against latest crates.io release
+        run: cargo semver-checks
