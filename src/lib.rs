@@ -6,6 +6,7 @@
 //! Provides [`SpiffeClientConfigStream`] and [`SpiffeServerConfigStream`] for
 //! use with [`ClientConfigProvider`] and [`ServerConfigProvider`]
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(rust_2018_idioms)]
 #![forbid(missing_docs, unsafe_code)]
 #![deny(
