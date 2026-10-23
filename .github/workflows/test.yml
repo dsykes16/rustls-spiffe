@@ -13,11 +13,11 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   test:
@@ -25,17 +25,17 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/cache@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: spire/build
           key: ${{ runner.os }}-spire-build-${{ hashFiles('spire/Makefile') }}
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: spire/bin
           key: ${{ runner.os }}-spire-bin-${{ hashFiles('spire/Makefile') }}
-      - uses: taiki-e/install-action@cargo-nextest
-      - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: taiki-e/install-action@a79b10393ebff625d820b524ff726bbcc77ac20b # cargo-nextest
+      - uses: taiki-e/install-action@94a99045a72830168b8eae8bf767ba08abeca856 # cargo-llvm-cov
       - name: format
         run: cargo fmt --check
       - name: lint
@@ -52,10 +52,10 @@ jobs:
         run: cargo llvm-cov report --codecov --output-path coverage.json
       - name: upload codecov test report
         if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: upload codecov coverage report
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
