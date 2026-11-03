@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+        uses: SonarSource/sonarqube-scan-action@e805d875275f728fac1885b413934be6d7c63f65 # v8.4.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   test:
@@ -34,8 +34,8 @@ jobs:
         with:
           path: spire/bin
           key: ${{ runner.os }}-spire-bin-${{ hashFiles('spire/Makefile') }}
-      - uses: taiki-e/install-action@a79b10393ebff625d820b524ff726bbcc77ac20b # cargo-nextest
-      - uses: taiki-e/install-action@94a99045a72830168b8eae8bf767ba08abeca856 # cargo-llvm-cov
+      - uses: taiki-e/install-action@e75ebe7dbc95b597977d60b8be6b783b732e4d3b # cargo-nextest
+      - uses: taiki-e/install-action@7ba3421b00d46a29aaedcfe59124f4574e23e73e # cargo-llvm-cov
       - name: format
         run: cargo fmt --check
       - name: lint
@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: taiki-e/install-action@7ff3827688bd742ffc0b597ab1bf503967134e46 # cargo-deny
+      - uses: taiki-e/install-action@a5adbc370d74d501ea91075eecdb603bec8857bc # cargo-deny
       - name: check advisories, licenses, bans, and sources
         run: cargo deny check
   semver:
@@ -80,6 +80,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: taiki-e/install-action@b0a10c0811388ca59f0b3a271a33942b64b510d0 # cargo-semver-checks
+      - uses: taiki-e/install-action@0ae6c22848edca658abfcc689521f6ff1e10357b # cargo-semver-checks
       - name: check semver against latest crates.io release
         run: cargo semver-checks
